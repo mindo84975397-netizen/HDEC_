@@ -2,300 +2,412 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>주요 지표 월간 모니터링 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; letter-spacing: -0.02em; color: #1e293b; -webkit-tap-highlight-color: transparent; }
-        .navy-bg { background-color: #001f3f; }
-        .bg-card { background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        @media (min-width: 768px) { .chart-container { height: 400px; } }
-        
-        .tab-scroll { display: flex; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; gap: 4px; padding-bottom: 4px; }
-        .tab-scroll::-webkit-scrollbar { display: none; }
-        .tab-btn { flex: 0 0 auto; font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; color: #64748b; background: white; }
-        .tab-btn.active { background-color: #001f3f; color: white; border-color: #001f3f; }
-        
-        .value-label { font-size: 11px; font-weight: 700; color: #64748b; }
-        .value-main { font-size: 1.4rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; }
-        .source-label { font-size: 9px; color: #94a3b8; font-weight: 500; margin-left: 2px; }
-        .ai-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; }
+        .tab-btn.active { background-color: #1e293b; color: white; border-color: #1e293b; }
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        .hidden { display: none; }
+        /* 지표 슬라이딩을 위한 스타일 */
+        .indicator-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .indicator-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="p-3 md:p-6">
-
-    <div id="capture-area" class="max-w-6xl mx-auto">
-        <header class="mb-6 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-                <h1 class="text-xl md:text-2xl font-black text-[#001f3f] flex items-center gap-2">
-                    <i data-lucide="layout-dashboard" class="w-6 h-6 text-blue-600"></i>
-                    주요 지표 월간 모니터링 대시보드
-                </h1>
-                <button onclick="downloadReport()" class="p-2 bg-slate-100 rounded-full text-slate-600">
-                    <i data-lucide="share-2" class="w-5 h-5"></i>
-                </button>
+<body class="p-2 md:p-4 text-slate-800">
+    <div id="capture-area" class="max-w-6xl mx-auto space-y-4">
+        
+        <header class="flex flex-col md:flex-row md:items-end justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-200 gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE DATA</span>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">주요 지표 월간 모니터링 대시보드 <span class="text-sm font-normal text-slate-400">v1.0</span></h1>
+                </div>
+                <p class="text-xs text-slate-500 flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3 h-3"></i> <span id="current-time"></span> 기준 시장 지표 분석
+                </p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <span id="current-time" class="text-[11px] font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-200"></span>
-                <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">실시간 업데이트</span>
+            <div class="flex gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div class="text-center px-2 border-r border-slate-200">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">USD/KRW</p>
+                    <p id="usd-rate" class="text-sm font-bold text-blue-700">---</p>
+                </div>
+                <div class="text-center px-2 border-r border-slate-200">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">EUR/KRW</p>
+                    <p id="eur-rate" class="text-sm font-bold text-blue-700">---</p>
+                </div>
+                <div class="text-right pl-2">
+                    <p id="fx-update-time" class="text-[9px] text-slate-300 mt-2">Connecting...</p>
+                </div>
             </div>
         </header>
 
-        <main class="grid grid-cols-12 gap-4">
-            <div class="col-span-12 lg:col-span-4 order-2 lg:order-1 space-y-4">
-                <div class="bg-card p-5">
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm mb-4">
-                        <i data-lucide="database" class="w-4 h-4 text-blue-600"></i> 주요 지표 현행값
-                    </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-3">
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">건설공사비지수<span class="source-label">통계청</span></p>
-                            <p class="value-main text-lg">131.18</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">소비자물가지수<span class="source-label">통계청</span></p>
-                            <p class="value-main text-lg">118.40</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">구리 (USD/t)<span class="source-label">LME</span></p>
-                            <p class="value-main text-lg text-blue-700">12,967.8</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">알루미늄 (USD/t)<span class="source-label">LME</span></p>
-                            <p class="value-main text-lg text-slate-600">3,065.4</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">유가 (KRW/L)<span class="source-label">오피넷</span></p>
-                            <p class="value-main text-lg text-red-600">1,688.6</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">레미콘 (KRW/m³)</p>
-                            <p class="value-main text-lg text-orange-600">103,470</p>
-                        </div>
-                        <div class="border-b border-slate-50 pb-1">
-                            <p class="value-label">철근 (KRW/t)</p>
-                            <p class="value-main text-lg text-emerald-600">858,000</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card p-5 border-t-4 border-blue-500">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-sm">실시간 환율</h3>
-                        <i data-lucide="refresh-cw" class="w-3 h-3 text-slate-400"></i>
-                    </div>
-                    <div class="flex gap-6">
-                        <div class="flex-1">
-                            <p class="value-label">USD/KRW</p>
-                            <p id="usd-rate" class="text-xl font-black text-slate-800">---</p>
-                        </div>
-                        <div class="flex-1 border-l pl-6">
-                            <p class="value-label">EUR/KRW</p>
-                            <p id="eur-rate" class="text-xl font-black text-slate-800">---</p>
-                        </div>
-                    </div>
+        <section class="indicator-scroll flex flex-nowrap overflow-x-auto gap-2 pb-2">
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">건설공사비(주거)</p>
+                <div class="flex items-end gap-1">
+                    <span id="curr-cci" class="text-lg font-bold text-slate-900">0</span>
+                    <span class="text-[10px] text-slate-400 mb-1">pt</span>
                 </div>
             </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">건설공사비(비주거)</p>
+                <div class="flex items-end gap-1">
+                    <span id="curr-cci-n" class="text-lg font-bold text-slate-900">0</span>
+                    <span class="text-[10px] text-slate-400 mb-1">pt</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">소비자물가</p>
+                <div class="flex items-end gap-1">
+                    <span id="curr-cpi" class="text-lg font-bold text-slate-900">0</span>
+                    <span class="text-[10px] text-slate-400 mb-1">pt</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">구리 (LME)</p>
+                <div class="flex items-end gap-1 text-blue-600">
+                    <span id="curr-cu" class="text-lg font-bold">0</span>
+                    <span class="text-[10px] mb-1">$</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">알루미늄</p>
+                <div class="flex items-end gap-1 text-blue-600">
+                    <span id="curr-al" class="text-lg font-bold">0</span>
+                    <span class="text-[10px] mb-1">$</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">유가 (WTI)</p>
+                <div class="flex items-end gap-1 text-red-600">
+                    <span id="curr-oil" class="text-lg font-bold">0</span>
+                    <span class="text-[10px] mb-1">₩</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">레미콘 (단가)</p>
+                <div class="flex items-end gap-1">
+                    <span id="curr-rmc" class="text-lg font-bold">0</span>
+                    <span class="text-[10px] mb-1">₩</span>
+                </div>
+            </div>
+            <div class="flex-none w-32 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[11px] text-slate-400 font-bold mb-1">철근 (SD400)</p>
+                <div class="flex items-end gap-1">
+                    <span id="curr-st" class="text-lg font-bold">0</span>
+                    <span class="text-[10px] mb-1">₩</span>
+                </div>
+            </div>
+        </section>
 
-            <div class="col-span-12 lg:col-span-8 order-1 lg:order-2 bg-card p-4 md:p-6">
-                <div class="tab-scroll mb-4">
-                    <button onclick="changeTab('index')" id="btn-index" class="tab-btn active">물가지수</button>
-                    <button onclick="changeTab('copper')" id="btn-copper" class="tab-btn">구리</button>
-                    <button onclick="changeTab('aluminum')" id="btn-aluminum" class="tab-btn">알루미늄</button>
-                    <button onclick="changeTab('oil')" id="btn-oil" class="tab-btn">유가</button>
-                    <button onclick="changeTab('remicon')" id="btn-remicon" class="tab-btn">레미콘</button>
-                    <button onclick="changeTab('steel')" id="btn-steel" class="tab-btn">철근</button>
-                    <button onclick="changeTab('forex')" id="btn-forex" class="tab-btn">환율</button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="flex p-1 bg-slate-100 rounded-lg">
+                            <button id="btn-index" onclick="toggleTab('index')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">물가지수</button>
+                            <button id="btn-copper" onclick="toggleTab('copper')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">구리</button>
+                            <button id="btn-aluminum" onclick="toggleTab('aluminum')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">알루미늄</button>
+                            <button id="btn-oil" onclick="toggleTab('oil')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">유가</button>
+                            <button id="btn-remicon" onclick="toggleTab('remicon')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">레미콘</button>
+                            <button id="btn-steel" onclick="toggleTab('steel')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">철근</button>
+                            <button id="btn-forex" onclick="toggleTab('forex')" class="tab-btn px-3 py-1.5 text-xs font-bold rounded-md transition-all">환율</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="exportToExcel()" class="flex items-center gap-1 px-2 py-1.5 text-[11px] font-bold text-green-700 bg-green-50 rounded border border-green-200 hover:bg-green-100">
+                            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> 엑셀
+                        </button>
+                        <button onclick="downloadReport()" class="flex items-center gap-1 px-2 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-50 rounded border border-slate-200 hover:bg-slate-100">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> 이미지
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex flex-col md:flex-row gap-2 mb-4">
-                    <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 flex-1">
-                        <input type="month" id="filter-start" class="bg-transparent text-xs font-bold p-1 w-full outline-none">
-                        <span class="text-slate-300">~</span>
-                        <input type="month" id="filter-end" class="bg-transparent text-xs font-bold p-1 w-full outline-none">
+                <div class="flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div class="flex items-center gap-1">
+                        <select id="start-year" class="text-xs p-1.5 rounded border border-slate-200 focus:ring-2 focus:ring-blue-500"></select>
+                        <select id="start-month" class="text-xs p-1.5 rounded border border-slate-200 focus:ring-2 focus:ring-blue-500"></select>
                     </div>
-                    <div class="flex gap-1">
-                        <button onclick="applyFilter()" class="bg-[#001f3f] text-white px-4 py-2 rounded-lg text-xs font-bold flex-1 md:flex-none">조회</button>
-                        <button onclick="resetFilter()" class="bg-slate-200 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                    <span class="text-slate-400 text-xs font-bold">~</span>
+                    <div class="flex items-center gap-1">
+                        <select id="end-year" class="text-xs p-1.5 rounded border border-slate-200 focus:ring-2 focus:ring-blue-500"></select>
+                        <select id="end-month" class="text-xs p-1.5 rounded border border-slate-200 focus:ring-2 focus:ring-blue-500"></select>
                     </div>
-                </div>
-
-                <div id="steel-warning" class="hidden mb-3 p-2 bg-amber-50 border border-amber-100 rounded text-[10px] font-bold text-amber-600">
-                    ⚠️ 철근 데이터는 22년 7월부터 제공됩니다.
+                    <div class="flex gap-1 ml-auto">
+                        <button onclick="applyFilter()" class="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition-colors">필터 적용</button>
+                        <button onclick="resetFilter()" class="px-2 py-1.5 bg-white text-slate-400 text-xs font-bold rounded border border-slate-200 hover:text-slate-600">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="chart-container">
                     <canvas id="mainChart"></canvas>
                 </div>
 
-                <div id="growth-rate-area" class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">조회 기간 변동률</p>
-                    <div id="period-growth-value" class="flex flex-wrap gap-2 text-[11px] font-bold"></div>
+                <div id="period-growth" class="p-3 bg-slate-900 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">선택 구간 지표 변동률</h4>
+                        <span id="latest-data-date" class="text-[10px] text-slate-500 italic"></span>
+                    </div>
+                    <div id="period-growth-value" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        </div>
+                </div>
+
+                <div id="ai-analysis-container" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm hidden">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-blue-600"></i>
+                        <h3 class="text-sm font-bold text-blue-900 uppercase tracking-tight">AI 시장 통찰 및 주요 이벤트</h3>
+                    </div>
+                    <div id="ai-analysis-text" class="text-xs leading-relaxed text-blue-800 space-y-2">
+                        </div>
                 </div>
             </div>
 
-            <div class="col-span-12 order-3 bg-white mt-4 rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                <div class="navy-bg p-5 text-white">
-                    <h3 class="text-lg font-black flex items-center gap-2">
-                        <i data-lucide="calculator" class="w-5 h-5 text-blue-400"></i> 공사비 시뮬레이터
-                    </h3>
-                </div>
-                
-                <div class="p-5 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <div class="space-y-4">
+                <div class="bg-slate-800 text-white p-5 rounded-xl shadow-lg border border-slate-700">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="calculator" class="w-5 h-5 text-blue-400"></i>
+                        <h3 class="text-base font-bold">공사비 물가변동 점검</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1">기준월</label>
-                                <input type="month" id="base-date" class="w-full p-2 border border-slate-300 rounded-lg text-xs font-bold" value="2021-01">
+                                <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">계약 시점</label>
+                                <select id="base-date" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"></select>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1">비교월</label>
-                                <input type="month" id="target-date" class="w-full p-2 border border-slate-300 rounded-lg text-xs font-bold" value="2025-12">
+                                <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">변경 시점</label>
+                                <select id="target-date" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"></select>
                             </div>
                         </div>
+
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1">기존 평당가 (원)</label>
-                            <input type="text" id="base-price-display" class="w-full p-3 bg-white border border-slate-300 rounded-lg font-black text-right text-sm" value="7,000,000" onkeyup="formatBasePrice(this)">
-                            <input type="hidden" id="base-price" value="7000000">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">계약 단가 (평당/원)</label>
+                            <input type="text" id="base-price-display" oninput="formatBasePrice(this)" value="5,000,000" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm font-bold text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <input type="hidden" id="base-price" value="5000000">
                         </div>
+
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1">연면적 (평)</label>
-                            <input type="text" id="area-display" class="w-full p-3 bg-white border border-slate-300 rounded-lg font-black text-right text-sm" placeholder="연면적 입력" onkeyup="formatArea(this)">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">연면적 (평)</label>
+                            <input type="text" id="total-area-display" oninput="formatArea(this)" placeholder="미입력 시 단가만 계산" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                             <input type="hidden" id="total-area" value="0">
                         </div>
-                        <button onclick="calculateEscalation()" class="w-full py-3 bg-blue-600 text-white rounded-lg font-black text-sm shadow-md active:scale-95 transition-transform">시뮬레이션 실행</button>
+
+                        <div class="p-3 bg-slate-900 rounded-lg border border-slate-700 space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-slate-500 block mb-1">비교 지표 1</label>
+                                    <select id="sim-index-1" class="w-full bg-slate-800 border border-slate-600 rounded p-1.5 text-xs">
+                                        <option value="cci" selected>건설공사비(주거)</option>
+                                        <option value="cci_n">건설공사비(비주거)</option>
+                                        <option value="cpi">소비자물가</option>
+                                        <option value="avg">건설공사비지수(주거)+소비자물가지수 평균</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-500 block mb-1">비교 지표 2</label>
+                                    <select id="sim-index-2" class="w-full bg-slate-800 border border-slate-600 rounded p-1.5 text-xs">
+                                        <option value="cpi" selected>소비자물가</option>
+                                        <option value="cci">건설공사비(주거)</option>
+                                        <option value="cci_n">건설공사비(비주거)</option>
+                                        <option value="avg">건설공사비지수(주거)+소비자물가지수 평균</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button onclick="calculateEscalation()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-md transition-all">시뮬레이션 실행</button>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="lg:col-span-2 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div id="card-cci" class="p-4 rounded-xl border border-slate-200 bg-white">
-                                <p class="text-[10px] font-bold text-slate-400 mb-1">건설공사비지수 기준</p>
-                                <div class="flex justify-between items-end">
-                                    <span id="res-cci-price" class="text-lg font-black text-slate-800">@ 0</span>
-                                    <span id="res-cci-rate" class="text-sm font-bold text-blue-600">0.00%</span>
-                                </div>
+                <div id="result-card" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Simulation Result</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <p id="sim-label-1" class="text-[11px] font-bold text-slate-500">지표 1 기준</p>
+                                <p id="sim-val-1-raw" class="text-[10px] text-slate-300">---</p>
                             </div>
-                            <div id="card-cpi" class="p-4 rounded-xl border border-slate-200 bg-white">
-                                <p class="text-[10px] font-bold text-slate-400 mb-1">소비자물가지수 기준</p>
-                                <div class="flex justify-between items-end">
-                                    <span id="res-cpi-price" class="text-lg font-black text-slate-800">@ 0</span>
-                                    <span id="res-cpi-rate" class="text-sm font-bold text-slate-500">0.00%</span>
-                                </div>
+                            <div class="text-right">
+                                <p id="res-rate-1" class="text-base font-bold text-slate-900">0%</p>
+                                <p id="res-price-1" class="text-xs text-blue-600 font-bold">@ 0</p>
                             </div>
                         </div>
-
-                        <div class="bg-blue-900 text-white p-5 rounded-xl shadow-lg relative overflow-hidden">
-                            <div class="relative z-10">
-                                <p class="text-[10px] text-blue-300 font-bold uppercase tracking-wider mb-2">지수간 변동 격차</p>
-                                <div class="flex justify-between items-center">
-                                    <h4 id="diff-value" class="text-3xl font-black">+0.00%</h4>
-                                    <div class="text-right">
-                                        <p id="diff-price-unit" class="text-sm font-bold text-blue-200"></p>
-                                    </div>
-                                </div>
-                                <div class="mt-4 pt-4 border-t border-blue-800">
-                                    <p id="recommendation-text" class="text-xs font-bold leading-relaxed"></p>
-                                    <p id="total-diff-text" class="text-[11px] text-blue-300 mt-1"></p>
-                                </div>
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <p id="sim-label-2" class="text-[11px] font-bold text-slate-500">지표 2 기준</p>
+                                <p id="sim-val-2-raw" class="text-[10px] text-slate-300">---</p>
+                            </div>
+                            <div class="text-right">
+                                <p id="res-rate-2" class="text-base font-bold text-slate-900">0%</p>
+                                <p id="res-price-2" class="text-xs text-slate-400">@ 0</p>
                             </div>
                         </div>
-
-                        <div class="bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                            <h5 class="flex items-center gap-2 text-amber-800 text-[11px] font-black mb-2">
-                                <i data-lucide="sparkles" class="w-3 h-3 ai-pulse"></i> 분석 리포트
-                            </h5>
-                            <div id="ai-summary-text" class="text-[11px] text-slate-600 leading-normal font-medium">
-                                기간을 선택하고 분석을 실행해주세요.
+                        <div class="pt-2">
+                            <div class="flex items-end justify-between mb-1">
+                                <span class="text-xs font-bold text-slate-800">지표 간 변동 격차</span>
+                                <span id="diff-value" class="text-xl font-black text-red-600">0%</span>
+                            </div>
+                            <p id="diff-price-unit" class="text-[11px] text-right text-slate-400 mb-2 font-medium"></p>
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
+                                <p id="recommendation-text" class="text-[11px] text-slate-600 leading-relaxed"></p>
+                                <p id="total-diff-text" class="text-xs font-bold text-blue-700 mt-2"></p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-        
-        <footer class="mt-10 pb-10 text-center">
-            <p class="text-[10px] font-bold text-slate-400">Copyright © 2026 코딩전문가 Dashboard v1.3</p>
+        </div>
+
+        <footer class="text-center py-6 text-slate-400">
+            <p class="text-[10px] font-bold uppercase tracking-widest mb-1 italic">Data Source: ECOS, LME, OPINET, Investing.com</p>
+            <p class="text-[9px]">본 분석기는 참고용이며, 실제 계약 시에는 법적 검토 및 전문가의 자문이 필요합니다.</p>
         </footer>
     </div>
 
     <script>
         const rawData = [
-            { d: "2021-01", cci: 103.80, cpi: 101.04, cu: 7970.50, al: 2003.80, oil: 1441.84, rmc: 73187, st: 0, usd_h: 1082.5, eur_h: 1332.2 },
-            { d: "2021-02", cci: 104.29, cpi: 101.58, cu: 8460.25, al: 2079.60, oil: 1463.22, rmc: 73187, st: 0, usd_h: 1118.4, eur_h: 1353.1 },
-            { d: "2021-03", cci: 105.28, cpi: 101.84, cu: 9004.98, al: 2191.59, oil: 1513.27, rmc: 73187, st: 0, usd_h: 1123.5, eur_h: 1354.2 },
-            { d: "2021-04", cci: 107.58, cpi: 101.98, cu: 9335.55, al: 2323.75, oil: 1534.52, rmc: 73187, st: 0, usd_h: 1127.1, eur_h: 1324.5 },
-            { d: "2021-05", cci: 109.51, cpi: 102.05, cu: 10183.97, al: 2433.84, oil: 1541.51, rmc: 73187, st: 0, usd_h: 1112.3, eur_h: 1338.4 },
-            { d: "2021-06", cci: 110.73, cpi: 102.05, cu: 9612.43, al: 2439.09, oil: 1577.33, rmc: 73187, st: 0, usd_h: 1110.5, eur_h: 1352.1 },
-            { d: "2021-07", cci: 111.78, cpi: 102.26, cu: 9433.59, al: 2491.95, oil: 1629.26, rmc: 73187, st: 0, usd_h: 1133.2, eur_h: 1344.5 },
-            { d: "2021-08", cci: 113.41, cpi: 102.75, cu: 9357.19, al: 2610.64, oil: 1645.75, rmc: 73187, st: 0, usd_h: 1150.4, eur_h: 1362.5 },
-            { d: "2021-09", cci: 114.76, cpi: 103.17, cu: 9324.07, al: 2839.68, oil: 1642.68, rmc: 73187, st: 0, usd_h: 1159.2, eur_h: 1370.4 },
-            { d: "2021-10", cci: 115.89, cpi: 103.35, cu: 9778.50, al: 2955.17, oil: 1712.32, rmc: 80500, st: 0, usd_h: 1184.5, eur_h: 1371.8 },
-            { d: "2021-11", cci: 116.26, cpi: 103.87, cu: 9765.48, al: 2641.41, oil: 1737.39, rmc: 80500, st: 0, usd_h: 1176.4, eur_h: 1358.2 },
-            { d: "2021-12", cci: 116.47, cpi: 104.04, cu: 9550.31, al: 2695.36, oil: 1646.37, rmc: 80500, st: 0, usd_h: 1177.2, eur_h: 1333.5 },
-            { d: "2022-01", cci: 118.85, cpi: 104.85, cu: 9775.93, al: 3003.08, oil: 1635.22, rmc: 80500, st: 0, usd_h: 1188.5, eur_h: 1345.2 },
-            { d: "2022-02", cci: 119.13, cpi: 105.42, cu: 9941.35, al: 3260.83, oil: 1714.61, rmc: 80500, st: 0, usd_h: 1205.4, eur_h: 1355.4 },
-            { d: "2022-03", cci: 120.31, cpi: 106.10, cu: 10237.59, al: 3537.85, oil: 1938.46, rmc: 80500, st: 0, usd_h: 1202.2, eur_h: 1348.2 },
-            { d: "2022-04", cci: 121.99, cpi: 106.83, cu: 10183.13, al: 3256.58, oil: 1976.53, rmc: 80500, st: 0, usd_h: 1212.5, eur_h: 1332.8 },
-            { d: "2022-05", cci: 123.48, cpi: 107.50, cu: 9362.81, al: 2826.36, oil: 1967.07, rmc: 80500, st: 0, usd_h: 1265.2, eur_h: 1341.5 },
-            { d: "2022-06", cci: 123.67, cpi: 108.21, cu: 9033.13, al: 2562.93, oil: 2084.00, rmc: 90960, st: 0, usd_h: 1242.4, eur_h: 1330.8 },
-            { d: "2022-07", cci: 124.08, cpi: 108.73, cu: 7529.79, al: 2401.57, oil: 2029.99, rmc: 90960, st: 1227000, usd_h: 1297.5, eur_h: 1335.2 },
-            { d: "2022-08", cci: 123.14, cpi: 108.63, cu: 7960.98, al: 2431.32, oil: 1792.19, rmc: 90960, st: 1209000, usd_h: 1307.4, eur_h: 1340.1 },
-            { d: "2022-09", cci: 124.21, cpi: 108.82, cu: 7734.70, al: 2229.91, oil: 1730.00, rmc: 90960, st: 1055000, usd_h: 1347.5, eur_h: 1390.4 },
-            { d: "2022-10", cci: 124.24, cpi: 109.16, cu: 7621.21, al: 2243.29, oil: 1666.65, rmc: 90960, st: 1055000, usd_h: 1430.8, eur_h: 1405.5 },
-            { d: "2022-11", cci: 124.44, cpi: 109.07, cu: 8029.95, al: 2335.27, oil: 1650.32, rmc: 90960, st: 1055000, usd_h: 1417.2, eur_h: 1403.4 },
-            { d: "2022-12", cci: 124.23, cpi: 109.26, cu: 8367.23, al: 2394.88, oil: 1563.68, rmc: 90960, st: 1055000, usd_h: 1311.5, eur_h: 1378.2 },
-            { d: "2023-01", cci: 125.98, cpi: 110.07, cu: 8999.79, al: 2489.02, oil: 1562.93, rmc: 90960, st: 1055000, usd_h: 1261.2, eur_h: 1345.1 },
-            { d: "2023-02", cci: 126.05, cpi: 110.33, cu: 8955.20, al: 2417.28, oil: 1578.49, rmc: 94990, st: 1055000, usd_h: 1221.5, eur_h: 1330.4 },
-            { d: "2023-03", cci: 126.28, cpi: 110.52, cu: 8835.72, al: 2290.11, oil: 1592.25, rmc: 95960, st: 1042000, usd_h: 1312.4, eur_h: 1400.2 },
-            { d: "2023-04", cci: 126.40, cpi: 110.77, cu: 8814.00, al: 2341.00, oil: 1640.95, rmc: 100510, st: 1055000, usd_h: 1301.2, eur_h: 1410.8 },
-            { d: "2023-05", cci: 126.49, cpi: 111.13, cu: 8234.28, al: 2267.60, oil: 1628.81, rmc: 100510, st: 1063000, usd_h: 1340.4, eur_h: 1435.5 },
-            { d: "2023-06", cci: 126.51, cpi: 111.16, cu: 8386.23, al: 2181.07, oil: 1580.64, rmc: 100510, st: 1063000, usd_h: 1317.2, eur_h: 1410.1 },
-            { d: "2023-07", cci: 126.34, cpi: 111.29, cu: 8445.26, al: 2152.38, oil: 1585.48, rmc: 100510, st: 1063000, usd_h: 1311.4, eur_h: 1425.2 },
-            { d: "2023-08", cci: 126.33, cpi: 112.28, cu: 8351.77, al: 2134.16, oil: 1716.76, rmc: 100510, st: 1063000, usd_h: 1279.5, eur_h: 1403.4 },
-            { d: "2023-09", cci: 128.33, cpi: 112.85, cu: 8270.86, al: 2177.50, oil: 1769.15, rmc: 100510, st: 1063000, usd_h: 1324.2, eur_h: 1414.2 },
-            { d: "2023-10", cci: 128.15, cpi: 113.27, cu: 7939.66, al: 2192.45, oil: 1775.89, rmc: 100510, st: 1063000, usd_h: 1354.5, eur_h: 1421.8 },
-            { d: "2023-11", cci: 127.99, cpi: 112.68, cu: 8173.95, al: 2202.23, oil: 1684.05, rmc: 100510, st: 1063000, usd_h: 1340.4, eur_h: 1423.2 },
-            { d: "2023-12", cci: 127.87, cpi: 112.73, cu: 8394.11, al: 2174.29, oil: 1600.58, rmc: 100510, st: 1041000, usd_h: 1290.5, eur_h: 1411.5 },
-            { d: "2024-01", cci: 128.93, cpi: 113.17, cu: 8344.30, al: 2194.18, oil: 1569.25, rmc: 100510, st: 1031000, usd_h: 1311.2, eur_h: 1435.1 },
-            { d: "2024-02", cci: 129.21, cpi: 113.78, cu: 8310.74, al: 2182.55, oil: 1614.51, rmc: 100510, st: 1018000, usd_h: 1334.4, eur_h: 1435.4 },
-            { d: "2024-03", cci: 129.14, cpi: 113.95, cu: 8675.63, al: 2222.35, oil: 1639.10, rmc: 106130, st: 1018000, usd_h: 1331.5, eur_h: 1445.2 },
-            { d: "2024-04", cci: 129.10, cpi: 114.01, cu: 9482.43, al: 2497.88, oil: 1687.79, rmc: 106130, st: 1018000, usd_h: 1347.2, eur_h: 1455.8 },
-            { d: "2024-05", cci: 129.08, cpi: 114.10, cu: 10129.07, al: 2565.19, oil: 1697.47, rmc: 106130, st: 1018000, usd_h: 1378.4, eur_h: 1481.5 },
-            { d: "2024-06", cci: 128.95, cpi: 113.84, cu: 9641.60, al: 2495.05, oil: 1657.37, rmc: 106130, st: 968000, usd_h: 1383.2, eur_h: 1480.1 },
-            { d: "2024-07", cci: 128.79, cpi: 114.13, cu: 9393.57, al: 2362.30, oil: 1707.13, rmc: 106130, st: 928000, usd_h: 1381.4, eur_h: 1492.2 },
-            { d: "2024-08", cci: 128.70, cpi: 114.54, cu: 8963.71, al: 2334.33, oil: 1691.28, rmc: 106130, st: 908000, usd_h: 1371.5, eur_h: 1494.4 },
-            { d: "2024-09", cci: 129.43, cpi: 114.65, cu: 9254.50, al: 2451.67, oil: 1622.20, rmc: 106130, st: 938000, usd_h: 1335.2, eur_h: 1485.2 },
-            { d: "2024-10", cci: 129.23, cpi: 114.69, cu: 9539.24, al: 2598.39, oil: 1591.34, rmc: 106130, st: 958000, usd_h: 1361.5, eur_h: 1475.8 },
-            { d: "2024-11", cci: 129.17, cpi: 114.40, cu: 9074.79, al: 2583.19, oil: 1628.29, rmc: 106130, st: 928000, usd_h: 1380.4, eur_h: 1455.2 },
-            { d: "2024-12", cci: 129.01, cpi: 114.91, cu: 8919.53, al: 2538.43, oil: 1653.64, rmc: 106130, st: 878000, usd_h: 1400.5, eur_h: 1465.5 },
-            { d: "2025-01", cci: 129.88, cpi: 115.71, cu: 8977.57, al: 2574.95, oil: 1709.29, rmc: 106130, st: 878000, usd_h: 1411.2, eur_h: 1480.1 },
-            { d: "2025-02", cci: 129.85, cpi: 116.08, cu: 9329.25, al: 2653.38, oil: 1728.26, rmc: 106130, st: 868000, usd_h: 1425.5, eur_h: 1510.4 },
-            { d: "2025-03", cci: 129.80, cpi: 116.29, cu: 9731.07, al: 2657.21, oil: 1688.93, rmc: 106130, st: 868000, usd_h: 1422.4, eur_h: 1505.2 },
-            { d: "2025-04", cci: 129.81, cpi: 116.38, cu: 9192.13, al: 2381.25, oil: 1646.69, rmc: 106130, st: 848000, usd_h: 1425.2, eur_h: 1510.8 },
-            { d: "2025-05", cci: 129.82, cpi: 116.27, cu: 9529.78, al: 2442.40, oil: 1636.45, rmc: 103470, st: 868000, usd_h: 1410.4, eur_h: 1515.5 },
-            { d: "2025-06", cci: 129.82, cpi: 116.31, cu: 9833.74, al: 2516.48, oil: 1642.08, rmc: 103470, st: 888000, usd_h: 1425.2, eur_h: 1510.1 },
-            { d: "2025-07", cci: 129.85, cpi: 116.52, cu: 9778.22, al: 2604.15, oil: 1667.58, rmc: 103470, st: 858000, usd_h: 1410.4, eur_h: 1510.2 },
-            { d: "2025-08", cci: 129.72, cpi: 116.45, cu: 9645.85, al: 2594.03, oil: 1665.91, rmc: 103470, st: 858000, usd_h: 1415.5, eur_h: 1515.4 },
-            { d: "2025-09", cci: 130.32, cpi: 117.06, cu: 9952.73, al: 2653.25, oil: 1659.88, rmc: 103470, st: 858000, usd_h: 1410.2, eur_h: 1510.2 },
-            { d: "2025-10", cci: 130.43, cpi: 117.42, cu: 10696.02, al: 2786.30, oil: 1663.22, rmc: 103470, st: 828000, usd_h: 1405.5, eur_h: 1505.8 },
-            { d: "2025-11", cci: 130.76, cpi: 117.20, cu: 10800.78, al: 2822.93, oil: 1718.14, rmc: 103470, st: 828000, usd_h: 1415.4, eur_h: 1515.2 },
-            { d: "2025-12", cci: 130.76, cpi: 117.57, cu: 11803.79, al: 2875.45, oil: 1740.20, rmc: 103470, st: 818000, usd_h: 1435.0, eur_h: 1530.0 },
-            { d: "2026-01", cci: 131.18, cpi: 118.03, cu: 13088.88, al: 3148.40, oil: 1704.38, rmc: 103470, st: 798000, usd_h: 1435.0, eur_h: 1530.0 },
-            { d: "2026-02", cci: 131.18, cpi: 118.40, cu: 12967.83, al: 3065.35, oil: 1688.60, rmc: 103470, st: 858000, usd_h: 1435.0, eur_h: 1530.0 },
+            { d: "2021-01", cci: 103.80, cci_n: 104.08, cpi: 101.04, cu: 7970.50, al: 2003.80, oil: 1441.84, rmc: 73187, st: 690000, usd_h: 1097.49, eur_h: 1336.31 },
+            { d: "2021-02", cci: 104.29, cci_n: 104.67, cpi: 101.58, cu: 8460.25, al: 2079.60, oil: 1463.22, rmc: 73187, st: 720000, usd_h: 1111.72, eur_h: 1344.6 },
+            { d: "2021-03", cci: 105.28, cci_n: 105.81, cpi: 101.84, cu: 9004.98, al: 2191.59, oil: 1513.27, rmc: 73187, st: 770000, usd_h: 1131.02, eur_h: 1346.74 },
+            { d: "2021-04", cci: 107.58, cci_n: 108.15, cpi: 101.98, cu: 9335.55, al: 2323.75, oil: 1534.52, rmc: 73187, st: 770000, usd_h: 1119.4, eur_h: 1338.47 },
+            { d: "2021-05", cci: 109.51, cci_n: 110.32, cpi: 102.05, cu: 10183.97, al: 2433.84, oil: 1541.51, rmc: 73187, st: 830000, usd_h: 1123.28, eur_h: 1363.91 },
+            { d: "2021-06", cci: 110.73, cci_n: 111.60, cpi: 102.05, cu: 9612.43, al: 2439.09, oil: 1577.33, rmc: 73187, st: 900000, usd_h: 1121.3, eur_h: 1351.94 },
+            { d: "2021-07", cci: 111.78, cci_n: 112.71, cpi: 102.26, cu: 9433.59, al: 2491.95, oil: 1629.26, rmc: 73187, st: 960000, usd_h: 1143.98, eur_h: 1352.72 },
+            { d: "2021-08", cci: 113.41, cci_n: 114.61, cpi: 102.75, cu: 9357.19, al: 2610.64, oil: 1645.75, rmc: 73187, st: 990000, usd_h: 1160.34, eur_h: 1365.63 },
+            { d: "2021-09", cci: 114.76, cci_n: 116.01, cpi: 103.17, cu: 9324.07, al: 2839.68, oil: 1642.68, rmc: 73187, st: 990000, usd_h: 1169.54, eur_h: 1378.19 },
+            { d: "2021-10", cci: 115.89, cci_n: 117.22, cpi: 103.35, cu: 9778.50, al: 2955.17, oil: 1712.32, rmc: 80500, st: 1058000, usd_h: 1182.82, eur_h: 1372.24 },
+            { d: "2021-11", cci: 116.26, cci_n: 117.64, cpi: 103.87, cu: 9765.48, al: 2641.41, oil: 1737.39, rmc: 80500, st: 1058000, usd_h: 1182.91, eur_h: 1350.43 },
+            { d: "2021-12", cci: 116.47, cci_n: 117.84, cpi: 104.04, cu: 9550.31, al: 2695.36, oil: 1646.37, rmc: 80500, st: 1060000, usd_h: 1183.7, eur_h: 1338.19 },
+            { d: "2022-01", cci: 118.85, cci_n: 120.11, cpi: 104.85, cu: 9775.93, al: 3003.08, oil: 1635.22, rmc: 80500, st: 1066000, usd_h: 1194.01, eur_h: 1353.2 },
+            { d: "2022-02", cci: 119.13, cci_n: 120.36, cpi: 105.42, cu: 9941.35, al: 3260.83, oil: 1714.61, rmc: 80500, st: 1066000, usd_h: 1198.34, eur_h: 1359.89 },
+            { d: "2022-03", cci: 120.31, cci_n: 121.50, cpi: 106.10, cu: 10237.59, al: 3537.85, oil: 1938.46, rmc: 80500, st: 1085000, usd_h: 1221.03, eur_h: 1345.33 },
+            { d: "2022-04", cci: 121.99, cci_n: 123.21, cpi: 106.83, cu: 10183.13, al: 3256.58, oil: 1976.53, rmc: 80500, st: 1097000, usd_h: 1232.34, eur_h: 1334.08 },
+            { d: "2022-05", cci: 123.48, cci_n: 124.72, cpi: 107.50, cu: 9362.81, al: 2826.36, oil: 1967.07, rmc: 80500, st: 1150000, usd_h: 1269.88, eur_h: 1342.43 },
+            { d: "2022-06", cci: 123.67, cci_n: 124.89, cpi: 108.21, cu: 9033.13, al: 2562.93, oil: 2084.00, rmc: 90960, st: 1175000, usd_h: 1277.35, eur_h: 1348.96 },
+            { d: "2022-07", cci: 124.08, cci_n: 125.13, cpi: 108.73, cu: 7529.79, al: 2401.57, oil: 2029.99, rmc: 90960, st: 1197000, usd_h: 1307.4, eur_h: 1332.91 },
+            { d: "2022-08", cci: 123.14, cci_n: 124.35, cpi: 108.63, cu: 7960.98, al: 2431.32, oil: 1792.19, rmc: 90960, st: 1179000, usd_h: 1318.44, eur_h: 1334.53 },
+            { d: "2022-09", cci: 124.21, cci_n: 125.32, cpi: 108.82, cu: 7734.70, al: 2229.91, oil: 1730.00, rmc: 90960, st: 1025000, usd_h: 1391.59, eur_h: 1377.09 },
+            { d: "2022-10", cci: 124.24, cci_n: 125.30, cpi: 109.16, cu: 7621.21, al: 2243.29, oil: 1666.65, rmc: 90960, st: 1025000, usd_h: 1426.66, eur_h: 1404.83 },
+            { d: "2022-11", cci: 124.44, cci_n: 125.40, cpi: 109.07, cu: 8029.95, al: 2335.27, oil: 1650.32, rmc: 90960, st: 1025000, usd_h: 1364.1, eur_h: 1388.29 },
+            { d: "2022-12", cci: 124.23, cci_n: 125.12, cpi: 109.26, cu: 8367.23, al: 2394.88, oil: 1563.68, rmc: 90960, st: 1025000, usd_h: 1296.22, eur_h: 1371.13 },
+            { d: "2023-01", cci: 125.98, cci_n: 126.83, cpi: 110.07, cu: 8999.79, al: 2489.02, oil: 1562.93, rmc: 90960, st: 1025000, usd_h: 1247.25, eur_h: 1342.37 },
+            { d: "2023-02", cci: 126.05, cci_n: 126.90, cpi: 110.33, cu: 8955.20, al: 2417.28, oil: 1578.49, rmc: 94990, st: 1025000, usd_h: 1270.74, eur_h: 1361.65 },
+            { d: "2023-03", cci: 126.28, cci_n: 127.09, cpi: 110.52, cu: 8835.72, al: 2290.11, oil: 1592.25, rmc: 95960, st: 1012000, usd_h: 1305.73, eur_h: 1398.5 },
+            { d: "2023-04", cci: 126.40, cci_n: 127.24, cpi: 110.77, cu: 8814.00, al: 2341.00, oil: 1640.95, rmc: 100510, st: 1025000, usd_h: 1320.01, eur_h: 1446.41 },
+            { d: "2023-05", cci: 126.49, cci_n: 127.27, cpi: 111.13, cu: 8234.28, al: 2267.60, oil: 1628.81, rmc: 100510, st: 1033000, usd_h: 1328.21, eur_h: 1444.2 },
+            { d: "2023-06", cci: 126.51, cci_n: 127.36, cpi: 111.16, cu: 8386.23, al: 2181.07, oil: 1580.64, rmc: 100510, st: 1033000, usd_h: 1296.71, eur_h: 1405.98 },
+            { d: "2023-07", cci: 126.34, cci_n: 127.19, cpi: 111.29, cu: 8445.26, al: 2152.38, oil: 1585.48, rmc: 100510, st: 1033000, usd_h: 1286.3, eur_h: 1421.87 },
+            { d: "2023-08", cci: 126.33, cci_n: 127.19, cpi: 112.28, cu: 8351.77, al: 2134.16, oil: 1716.76, rmc: 100510, st: 1033000, usd_h: 1318.47, eur_h: 1439.04 },
+            { d: "2023-09", cci: 128.33, cci_n: 129.09, cpi: 112.85, cu: 8270.86, al: 2177.50, oil: 1769.15, rmc: 100510, st: 1033000, usd_h: 1329.47, eur_h: 1422.61 },
+            { d: "2023-10", cci: 128.15, cci_n: 128.90, cpi: 113.27, cu: 7939.66, al: 2192.45, oil: 1775.89, rmc: 100510, st: 1033000, usd_h: 1350.69, eur_h: 1427.31 },
+            { d: "2023-11", cci: 127.99, cci_n: 128.70, cpi: 112.68, cu: 8173.95, al: 2202.23, oil: 1684.05, rmc: 100510, st: 1033000, usd_h: 1310.39, eur_h: 1415.59 },
+            { d: "2023-12", cci: 127.87, cci_n: 128.58, cpi: 112.73, cu: 8394.11, al: 2174.29, oil: 1600.58, rmc: 100510, st: 1011000, usd_h: 1303.98, eur_h: 1422.28 },
+            { d: "2024-01", cci: 128.93, cci_n: 129.52, cpi: 113.17, cu: 8344.30, al: 2194.18, oil: 1569.25, rmc: 100510, st: 1001000, usd_h: 1323.57, eur_h: 1444.12 },
+            { d: "2024-02", cci: 129.21, cci_n: 129.77, cpi: 113.78, cu: 8310.74, al: 2182.55, oil: 1614.51, rmc: 100510, st: 988000, usd_h: 1331.74, eur_h: 1437.52 },
+            { d: "2024-03", cci: 129.14, cci_n: 129.74, cpi: 113.95, cu: 8675.63, al: 2222.35, oil: 1639.10, rmc: 106130, st: 988000, usd_h: 1330.7, eur_h: 1447.27 },
+            { d: "2024-04", cci: 129.10, cci_n: 129.71, cpi: 114.01, cu: 9482.43, al: 2497.88, oil: 1687.79, rmc: 106130, st: 988000, usd_h: 1367.83, eur_h: 1466.77 },
+            { d: "2024-05", cci: 129.08, cci_n: 129.74, cpi: 114.10, cu: 10129.07, al: 2565.19, oil: 1697.47, rmc: 106130, st: 988000, usd_h: 1365.39, eur_h: 1476.24 },
+            { d: "2024-06", cci: 128.95, cci_n: 129.62, cpi: 113.84, cu: 9641.60, al: 2495.05, oil: 1657.37, rmc: 106130, st: 938000, usd_h: 1380.13, eur_h: 1485.57 },
+            { d: "2024-07", cci: 128.79, cci_n: 129.50, cpi: 114.13, cu: 9393.57, al: 2362.30, oil: 1707.13, rmc: 106130, st: 898000, usd_h: 1383.38, eur_h: 1499.68 },
+            { d: "2024-08", cci: 128.70, cci_n: 129.34, cpi: 114.54, cu: 8963.71, al: 2334.33, oil: 1691.28, rmc: 106130, st: 878000, usd_h: 1354.15, eur_h: 1491.48 },
+            { d: "2024-09", cci: 129.43, cci_n: 130.02, cpi: 114.65, cu: 9254.50, al: 2451.67, oil: 1622.20, rmc: 106130, st: 908000, usd_h: 1334.82, eur_h: 1481.6 },
+            { d: "2024-10", cci: 129.23, cci_n: 129.85, cpi: 114.69, cu: 9539.24, al: 2598.39, oil: 1591.34, rmc: 106130, st: 928000, usd_h: 1361, eur_h: 1481.35 },
+            { d: "2024-11", cci: 129.17, cci_n: 129.75, cpi: 114.40, cu: 9074.79, al: 2583.19, oil: 1628.29, rmc: 106130, st: 898000, usd_h: 1393.38, eur_h: 1482.93 },
+            { d: "2024-12", cci: 129.01, cci_n: 129.61, cpi: 114.91, cu: 8919.53, al: 2538.43, oil: 1653.64, rmc: 106130, st: 848000, usd_h: 1434.42, eur_h: 1502.63 },
+            { d: "2025-01", cci: 129.88, cci_n: 130.47, cpi: 115.71, cu: 8977.57, al: 2574.95, oil: 1709.29, rmc: 106130, st: 838000, usd_h: 1455.79, eur_h: 1504.11 },
+            { d: "2025-02", cci: 129.85, cci_n: 130.44, cpi: 116.08, cu: 9329.25, al: 2653.38, oil: 1728.26, rmc: 106130, st: 828000, usd_h: 1445.56, eur_h: 1505.44 },
+            { d: "2025-03", cci: 129.80, cci_n: 130.53, cpi: 116.29, cu: 9731.07, al: 2657.21, oil: 1688.93, rmc: 106130, st: 828000, usd_h: 1456.95, eur_h: 1575.91 },
+            { d: "2025-04", cci: 129.81, cci_n: 130.53, cpi: 116.38, cu: 9192.13, al: 2381.25, oil: 1646.69, rmc: 106130, st: 808000, usd_h: 1444.31, eur_h: 1617.71 },
+            { d: "2025-05", cci: 129.82, cci_n: 130.56, cpi: 116.27, cu: 9529.78, al: 2442.40, oil: 1636.45, rmc: 103470, st: 828000, usd_h: 1394.49, eur_h: 1571.45 },
+            { d: "2025-06", cci: 129.82, cci_n: 130.59, cpi: 116.31, cu: 9833.74, al: 2516.48, oil: 1642.08, rmc: 103470, st: 848000, usd_h: 1366.95, eur_h: 1574.56 },
+            { d: "2025-07", cci: 129.85, cci_n: 130.59, cpi: 116.52, cu: 9778.22, al: 2604.15, oil: 1667.58, rmc: 103470, st: 818000, usd_h: 1375.22, eur_h: 1607.95 },
+            { d: "2025-08", cci: 129.72, cci_n: 130.48, cpi: 116.45, cu: 9645.85, al: 2594.03, oil: 1665.91, rmc: 103470, st: 818000, usd_h: 1389.66, eur_h: 1617.03 },
+            { d: "2025-09", cci: 130.32, cci_n: 131.19, cpi: 117.06, cu: 9952.73, al: 2653.25, oil: 1659.88, rmc: 103470, st: 818000, usd_h: 1391.83, eur_h: 1633.09 },
+            { d: "2025-10", cci: 130.43, cci_n: 131.33, cpi: 117.42, cu: 10696.02, al: 2786.30, oil: 1663.22, rmc: 103470, st: 788000, usd_h: 1423.36, eur_h: 1655.73 },
+            { d: "2025-11", cci: 130.76, cci_n: 131.72, cpi: 117.20, cu: 10800.78, al: 2822.93, oil: 1718.14, rmc: 103470, st: 788000, usd_h: 1457.77, eur_h: 1684.9 },
+            { d: "2025-12", cci: 130.76, cci_n: 131.83, cpi: 117.57, cu: 11803.79, al: 2875.45, oil: 1740.20, rmc: 103470, st: 778000, usd_h: 1467.4, eur_h: 1717.96 },
+            { d: "2026-01", cci: 131.18, cci_n: 132.50, cpi: 118.03, cu: 13088.88, al: 3148.40, oil: 1704.38, rmc: 103470, st: 758000, usd_h: 1456.51, eur_h: 1709.82 },
+            { d: "2026-02", cci: 131.18, cci_n: 132.63, cpi: 118.40, cu: 12967.83, al: 3065.35, oil: 1688.60, rmc: 103470, st: 858000, usd_h: 1449.32, eur_h: 1713.05 },
         ];
 
+        const aiKnowledge = {
+            events: [
+                { period: ["2021-01", "2021-06"], tag: "리오프닝", desc: "팬데믹 이후 전 세계 건설 수요 폭발로 인한 원자재 병목 현상 및 철근 가격 급등 구간입니다." },
+                { period: ["2022-02", "2022-07"], tag: "전쟁여파", desc: "러시아-우크라이나 전쟁 발발로 유가와 시멘트(유연탄) 단가가 폭등하며 공사비 지수를 견인했습니다." },
+                { period: ["2022-09", "2022-12"], tag: "킹달러", desc: "미 연준의 금리 인상으로 환율이 1,400원을 돌파하며 수입 원자재 비용 부담이 극대화된 시기입니다." },
+                { period: ["2024-03", "2024-06"], tag: "공급불안", desc: "글로벌 구리 광산 가동 중단 및 인공지능(AI) 데이터 센터 전력망 수요로 구리 가격이 가파르게 상승했습니다." },
+                { period: ["2025-10", "2026-02"], tag: "AI붐", desc: "에너지 전환과 전력 수요 폭증으로 인한 구리 및 알루미늄 가격의 2차 슈퍼 사이클 구간입니다." }
+            ]
+        };
+
         let mainChart;
-        let currentTab = 'index';
+        let selectedTabs = ['index']; 
         const ctx = document.getElementById('mainChart').getContext('2d');
 
-        lucide.createIcons();
-        document.getElementById('current-time').innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        function initSelectors() {
+            lucide.createIcons();
+            const latest = rawData[rawData.length - 1];
+            const [lY, lM] = latest.d.split('-'); // 최신 데이터의 년, 월 추출
+
+            document.getElementById('latest-data-date').innerText = `(${latest.d} 기준)`;
+            document.getElementById('curr-cci').innerText = latest.cci.toFixed(2);
+            document.getElementById('curr-cci-n').innerText = latest.cci_n.toFixed(2);
+            document.getElementById('curr-cpi').innerText = latest.cpi.toFixed(2);
+            document.getElementById('curr-cu').innerText = latest.cu.toLocaleString();
+            document.getElementById('curr-al').innerText = latest.al.toLocaleString();
+            document.getElementById('curr-oil').innerText = latest.oil.toLocaleString();
+            document.getElementById('curr-rmc').innerText = latest.rmc.toLocaleString();
+            document.getElementById('curr-st').innerText = latest.st.toLocaleString();
+
+            const years = [...new Set(rawData.map(item => item.d.split('-')[0]))].sort();
+            const months = Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0'));
+            
+            const createOptions = (elId, data) => {
+                const el = document.getElementById(elId);
+                el.innerHTML = "";
+                data.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.innerText = v + (elId.includes('year') ? '년' : '월');
+                    el.appendChild(opt);
+                });
+            };
+
+            ['start-year', 'end-year'].forEach(id => createOptions(id, years));
+            ['start-month', 'end-month'].forEach(id => createOptions(id, months));
+            
+            // 초기 세팅값을 가장 최근 데이터가 있는 년월로 설정 (수정됨)
+            document.getElementById('start-year').value = lY;
+            document.getElementById('start-month').value = lM;
+            document.getElementById('end-year').value = lY;
+            document.getElementById('end-month').value = lM;
+
+            const baseDateSel = document.getElementById('base-date');
+            const targetDateSel = document.getElementById('target-date');
+            baseDateSel.innerHTML = "";
+            targetDateSel.innerHTML = "";
+            rawData.forEach(item => {
+                const opt1 = document.createElement('option');
+                opt1.value = item.d; opt1.innerText = item.d;
+                baseDateSel.appendChild(opt1);
+                
+                const opt2 = document.createElement('option');
+                opt2.value = item.d; opt2.innerText = item.d;
+                targetDateSel.appendChild(opt2);
+            });
+            baseDateSel.value = "2021-01";
+            targetDateSel.value = latest.d; // 시뮬레이션 타겟도 최신으로
+            
+            document.getElementById('current-time').innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
 
         function getValidValue(data, index, key) {
             for (let i = index; i >= 0; i--) {
@@ -305,107 +417,190 @@
             return 0;
         }
 
-        function changeTab(type) { currentTab = type; applyFilter(); }
-
-        function resetFilter() {
-            document.getElementById('filter-start').value = "";
-            document.getElementById('filter-end').value = "";
+        function toggleTab(type) {
+            if (selectedTabs.includes(type)) {
+                if (selectedTabs.length > 1) {
+                    selectedTabs = selectedTabs.filter(t => t !== type);
+                }
+            } else {
+                selectedTabs.push(type);
+            }
             applyFilter();
         }
 
-        function applyFilter() {
-            const startVal = document.getElementById('filter-start').value;
-            const endVal = document.getElementById('filter-end').value;
-            let filteredData = rawData;
-            if (startVal) filteredData = filteredData.filter(i => i.d >= startVal);
-            if (endVal) filteredData = filteredData.filter(i => i.d <= endVal);
-            updateMainChart(currentTab, filteredData);
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${currentTab}`).classList.add('active');
+        function resetFilter() { 
+            selectedTabs = ['index'];
+            initSelectors(); 
+            applyFilter(); 
         }
 
-        function updateMainChart(type, data) {
-            if (mainChart) mainChart.destroy();
-            const warningBox = document.getElementById('steel-warning');
-            if (type === 'steel' && data.some(item => item.d < "2022-07")) warningBox.classList.remove('hidden');
-            else warningBox.classList.add('hidden');
+        function applyFilter() {
+            const sY = document.getElementById('start-year').value;
+            const sM = document.getElementById('start-month').value;
+            const eY = document.getElementById('end-year').value;
+            const eM = document.getElementById('end-month').value;
+            const startVal = `${sY}-${sM}`;
+            const endVal = `${eY}-${eM}`;
+            
+            // 데이터 범위 유효성 검사 (마지막 데이터 기준)
+            const latestDate = rawData[rawData.length - 1].d;
+            if (startVal > latestDate || endVal > latestDate) {
+                alert(`현재 데이터는 ${latestDate}까지만 조회가 가능합니다.`);
+                initSelectors();
+                return;
+            }
+            
+            let filteredData = rawData.filter(i => i.d >= startVal && i.d <= endVal);
+            
+            // 데이터가 한 달만 선택된 경우 처리를 위해 (상승률 0% 표시 방지)
+            if (filteredData.length === 1) {
+                const prevIdx = rawData.findIndex(d => d.d === filteredData[0].d);
+                if (prevIdx > 0) {
+                    // 한 달 전 데이터부터 가져와서 변동을 보여줌
+                    filteredData = rawData.slice(prevIdx - 1, prevIdx + 1);
+                }
+            }
 
+            updateMainChart(selectedTabs, filteredData);
+            generateAIAnalysis(startVal, endVal, selectedTabs);
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                const type = btn.id.replace('btn-', '');
+                if (selectedTabs.includes(type)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function generateAIAnalysis(start, end, types) {
+            const container = document.getElementById('ai-analysis-container');
+            const textBox = document.getElementById('ai-analysis-text');
+            
+            let insights = aiKnowledge.events.filter(ev => {
+                return (ev.period[0] <= end && ev.period[1] >= start);
+            });
+
+            if (insights.length > 0) {
+                container.classList.remove('hidden');
+                let html = `<ul class="space-y-2">`;
+                insights.forEach(inView => {
+                    html += `<li><strong>[${inView.tag}]</strong> ${inView.desc}</li>`;
+                });
+                
+                if(types.includes('copper')) html += `<li><strong>[구리]</strong> 전력 인프라 및 신재생 에너지 수요와 맞물려 변동성이 큰 지표입니다.</li>`;
+                if(types.includes('oil')) html += `<li><strong>[에너지]</strong> 유가 변동은 3~6개월의 시차를 두고 레미콘 및 마감재 비용에 영향을 줍니다.</li>`;
+                
+                html += `</ul>`;
+                textBox.innerHTML = html;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function updateMainChart(types, data) {
+            if (mainChart) mainChart.destroy();
             const labels = data.map(item => item.d.slice(2));
             let datasets = [];
-            const commonOptions = { borderWidth: 2.5, pointRadius: 0, tension: 0.3 };
-
-            if (type === 'index') {
-                datasets = [
-                    { label: '건설공사비', data: data.map((i, idx) => getValidValue(data, idx, 'cci')), borderColor: '#001f3f', ...commonOptions },
-                    { label: '소비자물가', data: data.map((i, idx) => getValidValue(data, idx, 'cpi')), borderColor: '#3b82f6', borderDash: [4,4], ...commonOptions }
-                ];
-            } else if (type === 'copper') {
-                datasets = [{ label: '구리', data: data.map(i => i.cu), borderColor: '#1e40af', backgroundColor: 'rgba(30,64,175,0.05)', fill: true, ...commonOptions }];
-            } else if (type === 'aluminum') {
-                datasets = [{ label: '알루미늄', data: data.map(i => i.al), borderColor: '#64748b', backgroundColor: 'rgba(100,116,139,0.05)', fill: true, ...commonOptions }];
-            } else if (type === 'oil') {
-                datasets = [{ label: '유가', data: data.map(i => i.oil), borderColor: '#be123c', backgroundColor: 'rgba(190,18,60,0.05)', fill: true, ...commonOptions }];
-            } else if (type === 'remicon') {
-                datasets = [{ label: '레미콘', data: data.map(i => i.rmc), borderColor: '#ea580c', backgroundColor: 'rgba(234,88,12,0.05)', fill: true, ...commonOptions }];
-            } else if (type === 'steel') {
-                datasets = [{ label: '철근', data: data.map(i => i.st), borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.05)', fill: true, ...commonOptions }];
-            } else if (type === 'forex') {
-                datasets = [
-                    { label: 'USD', data: data.map(i => i.usd_h), borderColor: '#1e3a8a', ...commonOptions },
-                    { label: 'EUR', data: data.map(i => i.eur_h), borderColor: '#60a5fa', ...commonOptions }
-                ];
-            }
+            const commonOptions = { borderWidth: 2, pointRadius: 0, tension: 0.3 };
+            
+            types.forEach(type => {
+                if (type === 'index') {
+                    datasets.push({ label: '주거용 건설공사비', data: data.map((i, idx) => getValidValue(data, idx, 'cci')), borderColor: '#001f3f', yAxisID: 'y', ...commonOptions });
+                    datasets.push({ label: '비주거용 건설공사비', data: data.map((i, idx) => getValidValue(data, idx, 'cci_n')), borderColor: '#16a34a', borderDash: [2,2], yAxisID: 'y', ...commonOptions });
+                    datasets.push({ label: '소비자물가', data: data.map((i, idx) => getValidValue(data, idx, 'cpi')), borderColor: '#3b82f6', borderDash: [4,4], yAxisID: 'y', ...commonOptions });
+                } else if (type === 'copper') {
+                    datasets.push({ label: '구리', data: data.map(i => i.cu), borderColor: '#1e40af', yAxisID: 'y1', ...commonOptions });
+                } else if (type === 'aluminum') {
+                    datasets.push({ label: '알루미늄', data: data.map(i => i.al), borderColor: '#64748b', yAxisID: 'y1', ...commonOptions });
+                } else if (type === 'oil') {
+                    datasets.push({ label: '유가', data: data.map(i => i.oil), borderColor: '#be123c', yAxisID: 'y1', ...commonOptions });
+                } else if (type === 'remicon') {
+                    datasets.push({ label: '레미콘', data: data.map(i => i.rmc), borderColor: '#ea580c', yAxisID: 'y1', ...commonOptions });
+                } else if (type === 'steel') {
+                    datasets.push({ label: '철근', data: data.map(i => i.st), borderColor: '#16a34a', yAxisID: 'y1', ...commonOptions });
+                } else if (type === 'forex') {
+                    datasets.push({ label: 'USD', data: data.map(i => i.usd_h), borderColor: '#1e3a8a', yAxisID: 'y1', ...commonOptions });
+                    datasets.push({ label: 'EUR', data: data.map(i => i.eur_h), borderColor: '#60a5fa', yAxisID: 'y1', ...commonOptions });
+                }
+            });
 
             mainChart = new Chart(ctx, {
                 type: 'line',
                 data: { labels, datasets },
                 options: { 
                     responsive: true, 
-                    maintainAspectRatio: false,
-                    // 근처만 가도 정보가 나오도록 인터랙션 옵션 수정
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
+                    maintainAspectRatio: false, 
+                    interaction: { intersect: false, mode: 'index' },
                     plugins: { 
-                        legend: { display: true, labels: { boxWidth: 8, font: { size: 10, weight: 'bold' } } },
-                        tooltip: {
-                            enabled: true,
-                            padding: 10,
-                            cornerRadius: 8,
-                            titleFont: { size: 12, weight: 'bold' },
-                            bodyFont: { size: 11 }
-                        }
+                        legend: { display: true, position: 'top', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' } } } 
                     },
-                    scales: { x: { ticks: { font: { size: 9 }, maxRotation: 0 } }, y: { ticks: { font: { size: 9 } } } }
+                    scales: { 
+                        x: { ticks: { font: { size: 9 }, maxRotation: 0 } },
+                        y: { display: true, position: 'left', ticks: { font: { size: 8 } }, grid: { drawOnChartArea: true } },
+                        y1: { display: datasets.some(d => d.yAxisID === 'y1'), position: 'right', ticks: { font: { size: 8 } }, grid: { drawOnChartArea: false } }
+                    }
                 }
             });
-
+            
             if (data.length > 1) {
                 let growthResults = datasets.map(ds => {
-                    const startVal = ds.data[0];
+                    const startVal = ds.data[0]; 
                     const endVal = ds.data[ds.data.length - 1];
-                    const growth = (startVal === 0 || startVal === null) ? "N/A" : ((endVal - startVal) / startVal * 100).toFixed(2);
-                    return `<span>${ds.label}: <strong class="${growth >= 0 ? 'text-red-500' : 'text-blue-500'}">${growth}%</strong></span>`;
+                    const growth = (startVal === 0 || startVal === null) ? "0.00" : ((endVal - startVal) / startVal * 100).toFixed(2);
+                    return `<div class="bg-white px-2 py-1 rounded border border-slate-200">
+                        <span class="text-[10px] text-slate-400 block">${ds.label}</span>
+                        <strong class="${growth >= 0 ? 'text-red-500' : 'text-blue-500'}">${growth}%</strong>
+                    </div>`;
                 });
-                document.getElementById('period-growth-value').innerHTML = growthResults.join('<span class="text-slate-200">|</span>');
+                document.getElementById('period-growth-value').innerHTML = growthResults.join('');
             }
+        }
+
+        function exportToExcel() {
+            const sY = document.getElementById('start-year').value;
+            const sM = document.getElementById('start-month').value;
+            const eY = document.getElementById('end-year').value;
+            const eM = document.getElementById('end-month').value;
+            const startVal = `${sY}-${sM}`; const endVal = `${eY}-${eM}`;
+            const data = rawData.filter(i => i.d >= startVal && i.d <= endVal);
+            
+            let header = "날짜";
+            const cols = [];
+
+            if (selectedTabs.includes('index')) {
+                header += ",주거용건설공사비,비주거용건설공사비,소비자물가지수";
+                cols.push('cci', 'cci_n', 'cpi');
+            }
+            if (selectedTabs.includes('copper')) { header += ",구리(USD)"; cols.push('cu'); }
+            if (selectedTabs.includes('aluminum')) { header += ",알루미늄(USD)"; cols.push('al'); }
+            if (selectedTabs.includes('oil')) { header += ",유가(KRW)"; cols.push('oil'); }
+            if (selectedTabs.includes('remicon')) { header += ",레미콘(KRW)"; cols.push('rmc'); }
+            if (selectedTabs.includes('steel')) { header += ",철근(KRW)"; cols.push('st'); }
+            if (selectedTabs.includes('forex')) { header += ",환율USD,환율EUR"; cols.push('usd_h', 'eur_h'); }
+
+            let csvContent = "\uFEFF" + header + "\n";
+            data.forEach(r => {
+                let row = `${r.d}`;
+                cols.forEach(col => { row += `,${r[col]}`; });
+                csvContent += row + "\n";
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.setAttribute("href", URL.createObjectURL(blob));
+            link.setAttribute("download", `대시보드_데이터_${startVal}_to_${endVal}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         function formatBasePrice(input) {
             let val = input.value.replace(/,/g, '');
-            if (!isNaN(val) && val !== "") { 
-                input.value = Number(val).toLocaleString(); 
-                document.getElementById('base-price').value = val; 
-            }
+            if (!isNaN(val) && val !== "") { input.value = Number(val).toLocaleString(); document.getElementById('base-price').value = val; }
         }
-
         function formatArea(input) {
             let val = input.value.replace(/,/g, '');
-            if (!isNaN(val) && val !== "") { 
-                input.value = Number(val).toLocaleString(); 
-                document.getElementById('total-area').value = val; 
-            }
+            if (!isNaN(val) && val !== "") { input.value = Number(val).toLocaleString(); document.getElementById('total-area').value = val; }
         }
 
         function calculateEscalation() {
@@ -413,45 +608,69 @@
             const tDate = document.getElementById('target-date').value;
             const bPrice = parseFloat(document.getElementById('base-price').value);
             const tArea = parseFloat(document.getElementById('total-area').value) || 0;
-
+            
+            const key1 = document.getElementById('sim-index-1').value;
+            const key2 = document.getElementById('sim-index-2').value;
+            
             const startIdx = rawData.findIndex(item => item.d === bDate);
             const endIdx = rawData.findIndex(item => item.d === tDate);
-            if(startIdx === -1 || endIdx === -1) return;
-
-            const startCCI = getValidValue(rawData, startIdx, 'cci'); const endCCI = getValidValue(rawData, endIdx, 'cci');
-            const startCPI = getValidValue(rawData, startIdx, 'cpi'); const endCPI = getValidValue(rawData, endIdx, 'cpi');
-
-            const cciRate = ((endCCI - startCCI) / startCCI) * 100;
-            const cpiRate = ((endCPI - startCPI) / startCPI) * 100;
-            const cciPrice = bPrice * (1 + cciRate/100);
-            const cpiPrice = bPrice * (1 + cpiRate/100);
-
-            document.getElementById('res-cci-rate').innerText = cciRate.toFixed(2) + "%";
-            document.getElementById('res-cci-price').innerText = "@ " + Math.round(cciPrice).toLocaleString();
-            document.getElementById('res-cpi-rate').innerText = cpiRate.toFixed(2) + "%";
-            document.getElementById('res-cpi-price').innerText = "@ " + Math.round(cpiPrice).toLocaleString();
-
-            const diffRate = Math.abs(cciRate - cpiRate).toFixed(2);
-            const diffPrice = Math.abs(Math.round(cciPrice - cpiPrice)).toLocaleString();
             
-            document.getElementById('recommendation-text').innerHTML = cciRate > cpiRate ? "건설공사비지수가 상대적으로 높습니다." : "소비자물가지수가 상대적으로 높습니다.";
-            document.getElementById('diff-value').innerText = "+" + diffRate + "%";
-            document.getElementById('diff-price-unit').innerText = `(+@${diffPrice}원/평)`;
-
-            if(tArea > 0) {
-                const totalDiff = Math.abs(Math.round((cciPrice - cpiPrice) * tArea)).toLocaleString();
-                document.getElementById('total-diff-text').innerText = `총 공사비 격차: 약 ${totalDiff}원 발생`;
+            if(startIdx === -1 || endIdx === -1) {
+                alert("선택한 날짜의 데이터가 존재하지 않습니다.");
+                return;
             }
+
+            const getRate = (idxS, idxE, key) => {
+                if (key === 'avg') {
+                    const r_cci = (getValidValue(rawData, idxE, 'cci') - getValidValue(rawData, idxS, 'cci')) / getValidValue(rawData, idxS, 'cci');
+                    const r_cpi = (getValidValue(rawData, idxE, 'cpi') - getValidValue(rawData, idxS, 'cpi')) / getValidValue(rawData, idxS, 'cpi');
+                    return ((r_cci + r_cpi) / 2) * 100;
+                }
+                const vS = getValidValue(rawData, idxS, key);
+                const vE = getValidValue(rawData, idxE, key);
+                return ((vE - vS) / vS) * 100;
+            };
+
+            const names = {
+                'cci': '건설공사비(주거)',
+                'cci_n': '건설공사비(비주거)',
+                'cpi': '소비자물가',
+                'avg': '건설공사비지수(주거)+소비자물가지수 평균'
+            };
+
+            const rate1 = getRate(startIdx, endIdx, key1);
+            const rate2 = getRate(startIdx, endIdx, key2);
             
-            let summary = `분석 결과, <strong>건설공사비(${cciRate.toFixed(2)}%)</strong> 상승폭이 <strong>소비자물가(${cpiRate.toFixed(2)}%)</strong> 대비 가파른 것으로 나타납니다. 원자재 공급망 및 인건비 상승분이 일반 물가보다 선반영된 결과로 해석됩니다.`;
-            document.getElementById('ai-summary-text').innerHTML = summary;
+            const price1 = bPrice * (1 + rate1 / 100);
+            const price2 = bPrice * (1 + rate2 / 100);
+            
+            document.getElementById('sim-label-1').innerText = `${names[key1]} 기준`;
+            document.getElementById('sim-val-1-raw').innerText = `상승률 산출 방식 적용`;
+            document.getElementById('res-rate-1').innerText = rate1.toFixed(2) + "%";
+            document.getElementById('res-price-1').innerText = "@ " + Math.round(price1).toLocaleString();
+
+            document.getElementById('sim-label-2').innerText = `${names[key2]} 기준`;
+            document.getElementById('sim-val-2-raw').innerText = `상승률 산출 방식 적용`;
+            document.getElementById('res-rate-2').innerText = rate2.toFixed(2) + "%";
+            document.getElementById('res-price-2').innerText = "@ " + Math.round(price2).toLocaleString();
+            
+            const diffRate = (rate1 - rate2).toFixed(2);
+            const diffPrice = Math.abs(Math.round(price1 - price2)).toLocaleString();
+            
+            document.getElementById('diff-value').innerText = (diffRate >= 0 ? "+" : "") + diffRate + "%";
+            document.getElementById('diff-price-unit').innerText = `(격차 @${diffPrice}원/평)`;
+            document.getElementById('recommendation-text').innerHTML = `지표 1(${names[key1]})이 지표 2(${names[key2]}) 대비 ${Math.abs(diffRate)}% ${diffRate >= 0 ? '높게' : '낮게'} 변동되었습니다.`;
+            
+            if(tArea > 0) {
+                document.getElementById('total-diff-text').innerText = `총 공사비 격차: 약 ${Math.abs(Math.round((price1 - price2) * tArea)).toLocaleString()}원 발생`;
+            } else {
+                document.getElementById('total-diff-text').innerText = "";
+            }
         }
 
         function downloadReport() {
-            const area = document.getElementById('capture-area');
-            html2canvas(area, { scale: 2, useCORS: true, backgroundColor: "#f8fafc" }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `지표분석_${new Date().toISOString().slice(0,10)}.png`;
+            html2canvas(document.getElementById('capture-area'), { scale: 2, useCORS: true, backgroundColor: "#f8fafc" }).then(canvas => {
+                const link = document.createElement('a'); link.download = `분석보고서_${new Date().toISOString().slice(0,10)}.png`;
                 link.href = canvas.toDataURL('image/png'); link.click();
             });
         }
@@ -462,10 +681,15 @@
                 const data = await res.json();
                 document.getElementById('usd-rate').innerText = (1/data.rates.USD).toLocaleString(undefined, {maximumFractionDigits:1});
                 document.getElementById('eur-rate').innerText = (1/data.rates.EUR).toLocaleString(undefined, {maximumFractionDigits:1});
-            } catch (e) { }
+                const now = new Date();
+                document.getElementById('fx-update-time').innerText = `Update: ${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            } catch (e) { console.error("환율 데이터를 가져오지 못했습니다."); }
         }
 
-        applyFilter(); getLiveFX(); calculateEscalation();
+        initSelectors(); 
+        applyFilter(); 
+        getLiveFX(); 
+        calculateEscalation();
     </script>
 </body>
 </html>
